@@ -64,7 +64,10 @@ def test_find_matching_chats_matches_by_workspace_id_or_path(migrate_module, wor
 
 
 def test_find_workspace_id_reads_workspace_storage(migrate_module, cursor_env, workspace_paths):
+    cursor_env.add_workspace("source-id", workspace_paths["src"])
+    cursor_env.add_workspace("dest-id", workspace_paths["dst"])
+
     assert migrate_module.find_workspace_id(workspace_paths["src"]) == "source-id"
     assert migrate_module.find_workspace_id(workspace_paths["dst"]) == "dest-id"
-    assert migrate_module.find_workspace_id(cursor_env["root"] / "missing") is None
+    assert migrate_module.find_workspace_id(workspace_paths["root"] / "missing") is None
 

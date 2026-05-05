@@ -47,6 +47,19 @@ Before any write it makes a timestamped backup of `state.vscdb` at
 - **Cursor must be fully quit** before running. The script aborts if it
   detects a `state.vscdb-wal` or `state.vscdb-shm` lock file.
 
+## Testing
+
+Install the development test dependency and run pytest from this directory:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 -m pytest
+```
+
+The tests build an isolated Cursor data layout under pytest's temporary
+directory, including workspaceStorage entries, a synthetic `state.vscdb`, and
+agent transcript folders. They never read or write your real Cursor data.
+
 ## Usage
 
 ```bash
