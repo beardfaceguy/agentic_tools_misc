@@ -1,0 +1,32 @@
+name: migrate-cursor-chat tests
+
+on:
+  push:
+    paths:
+      - "migrate-cursor-chat/**"
+      - ".github/workflows/migrate-cursor-chat-tests.yml"
+  pull_request:
+    paths:
+      - "migrate-cursor-chat/**"
+      - ".github/workflows/migrate-cursor-chat-tests.yml"
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: migrate-cursor-chat
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest
