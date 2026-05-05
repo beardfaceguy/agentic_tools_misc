@@ -9,8 +9,8 @@ and rewrites its embedded `workspaceIdentifier` so Cursor shows it under
 the destination workspace.
 
 Both the source and the destination workspace must have been opened in
-Cursor at least once (so each has an entry in
-~/.config/Cursor/User/workspaceStorage/<id>/workspace.json).
+Cursor at least once (so each has an entry in Cursor's
+workspaceStorage/<id>/workspace.json).
 
 PREREQUISITE: Cursor must be fully quit before running, otherwise SQLite
 is locked and Cursor will overwrite the changes on shutdown.
@@ -34,11 +34,40 @@ import sys
 import time
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import unquote, urlparse
 
-CURSOR_USER_DIR = Path.home() / ".config/Cursor/User"
+
+def default_cursor_user_dir(
+    home: Path | None = None, platform: str | None = None
+) -> Path:
+    """Return Cursor's User data directory for the current OS."""
+    home = home or Path.home()
+    platform = platform or sys.platform
+    if platform == "darwin":
+        return home / "Library/Application Support/Cursor/User"
+    if platform.startswith("linux"):
+        return home / ".config/Cursor/User"
+    raise RuntimeError(f"unsupported platform: {platform}")
+
+
+def default_projects_dir(home: Path | None = None) -> Path:
+    """Return Cursor's per-workspace project data directory."""
+    home = home or Path.home()
+    return home / ".cursor/projects"
+
+
+def path_from_file_uri(uri: str) -> Path | None:
+    """Convert a file:// URI from workspace.json into a local Path."""
+    parsed = urlparse(uri)
+    if parsed.scheme != "file" or parsed.netloc not in ("", "localhost"):
+        return None
+    return Path(unquote(parsed.path))
+
+
+CURSOR_USER_DIR = default_cursor_user_dir()
 WORKSPACE_STORAGE_DIR = CURSOR_USER_DIR / "workspaceStorage"
 GLOBAL_DB = CURSOR_USER_DIR / "globalStorage" / "state.vscdb"
-PROJECTS_DIR = Path.home() / ".cursor/projects"
+PROJECTS_DIR = default_projects_dir()
 
 
 def encode_project_dir(abs_path: Path) -> str:
@@ -66,9 +95,10 @@ def find_workspace_id(folder_path: Path) -> str | None:
         except Exception:
             continue
         folder = data.get("folder")
-        if not folder or not folder.startswith("file://"):
+        if not folder:
             continue
-        if Path(folder[len("file://") :]).resolve() == target:
+        folder_path = path_from_file_uri(folder)
+        if folder_path and folder_path.resolve() == target:
             return entry.name
     return None
 

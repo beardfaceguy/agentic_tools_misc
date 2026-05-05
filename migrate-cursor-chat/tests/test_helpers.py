@@ -1,4 +1,27 @@
 from pathlib import Path
+from urllib.parse import quote
+
+
+def test_default_cursor_user_dir_uses_linux_config_path(migrate_module):
+    home = Path("/home/alice")
+
+    assert migrate_module.default_cursor_user_dir(home, "linux") == (
+        home / ".config/Cursor/User"
+    )
+
+
+def test_default_cursor_user_dir_uses_macos_application_support_path(migrate_module):
+    home = Path("/Users/alice")
+
+    assert migrate_module.default_cursor_user_dir(home, "darwin") == (
+        home / "Library/Application Support/Cursor/User"
+    )
+
+
+def test_default_projects_dir_is_shared_across_supported_platforms(migrate_module):
+    home = Path("/Users/alice")
+
+    assert migrate_module.default_projects_dir(home) == home / ".cursor/projects"
 
 
 def test_encode_project_dir_strips_leading_slash_and_replaces_separators(migrate_module):
@@ -70,4 +93,19 @@ def test_find_workspace_id_reads_workspace_storage(migrate_module, cursor_env, w
     assert migrate_module.find_workspace_id(workspace_paths["src"]) == "source-id"
     assert migrate_module.find_workspace_id(workspace_paths["dst"]) == "dest-id"
     assert migrate_module.find_workspace_id(workspace_paths["root"] / "missing") is None
+
+
+def test_find_workspace_id_decodes_file_uri_paths(
+    migrate_module, cursor_env, workspace_paths
+):
+    spaced_path = workspace_paths["root"] / "source with spaces"
+    spaced_path.mkdir()
+    workspace_dir = cursor_env.workspace_storage / "spaces-id"
+    workspace_dir.mkdir(parents=True)
+    (workspace_dir / "workspace.json").write_text(
+        f'{{"folder": "file://{quote(str(spaced_path))}"}}',
+        encoding="utf-8",
+    )
+
+    assert migrate_module.find_workspace_id(spaced_path) == "spaces-id"
 

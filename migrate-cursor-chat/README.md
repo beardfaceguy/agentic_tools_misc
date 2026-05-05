@@ -6,12 +6,11 @@ moved the folder on disk.
 ## The problem
 
 Cursor binds each chat (composer) to a specific workspace path. The binding
-lives in the global SQLite database at
-`~/.config/Cursor/User/globalStorage/state.vscdb`, embedded inside each
-chat's record. If you move the workspace folder (e.g. `~/work/foo` →
-`~/work/team/foo`), Cursor opens the new path as a brand-new workspace and
-your previous chats vanish from the sidebar — they're not deleted, just
-orphaned to the old path.
+lives in Cursor's global SQLite database at `globalStorage/state.vscdb` under
+the platform-specific user data directory, embedded inside each chat's record.
+If you move the workspace folder (e.g. `~/work/foo` → `~/work/team/foo`),
+Cursor opens the new path as a brand-new workspace and your previous chats
+vanish from the sidebar — they're not deleted, just orphaned to the old path.
 
 This script rewrites those embedded workspace identifiers so the chats
 re-appear in the new workspace's history.
@@ -36,14 +35,15 @@ Before any write it makes a timestamped backup of `state.vscdb` at
 ## Requirements
 
 - Python 3.9+ (uses only the standard library).
-- Linux. The script assumes Cursor's data lives under
-  `~/.config/Cursor/User/` and `~/.cursor/projects/`. On macOS the user
-  data root is `~/Library/Application Support/Cursor/User/` and on Windows
-  it's `%APPDATA%\Cursor\User\` — adjust the constants at the top of the
-  script if you run it on those platforms.
+- Linux or macOS. The script automatically uses Cursor's platform-specific
+  data root:
+  - Linux: `~/.config/Cursor/User/`
+  - macOS: `~/Library/Application Support/Cursor/User/`
+  Per-workspace agent data is read from `~/.cursor/projects/` on both.
+  Windows is not currently supported.
 - Both the **source** and the **destination** workspace must have been
-  opened in Cursor at least once (so each appears under
-  `~/.config/Cursor/User/workspaceStorage/<id>/workspace.json`).
+  opened in Cursor at least once (so each appears under Cursor's
+  `workspaceStorage/<id>/workspace.json`).
 - **Cursor must be fully quit** before running. The script aborts if it
   detects a `state.vscdb-wal` or `state.vscdb-shm` lock file.
 
@@ -122,8 +122,8 @@ Useful if you want to verify the script's behaviour or extend it.
 ### Workspace storage
 
 Each workspace Cursor has ever opened gets a folder under
-`~/.config/Cursor/User/workspaceStorage/<id>/`. The folder name is an
-opaque hash; the actual path is recorded in `workspace.json`:
+Cursor's platform-specific `workspaceStorage/<id>/`. The folder name is
+an opaque hash; the actual path is recorded in `workspace.json`:
 
 ```json
 { "folder": "file:///home/you/work/foo" }
@@ -152,7 +152,8 @@ history.
 ### The actual binding
 
 The chat→workspace association is stored in the global database
-`~/.config/Cursor/User/globalStorage/state.vscdb` in two places:
+`globalStorage/state.vscdb` under Cursor's platform-specific user data
+directory in two places:
 
 - `ItemTable['composer.composerHeaders']` — JSON value containing
   `allComposers: [...]`. Each composer has a `workspaceIdentifier` field
@@ -167,8 +168,13 @@ Both must be updated to fully migrate a chat.
 If something goes wrong, restore the backup the script created:
 
 ```bash
+# Linux
 cp ~/.config/Cursor/User/globalStorage/state.vscdb.bak-<ts> \
    ~/.config/Cursor/User/globalStorage/state.vscdb
+
+# macOS
+cp ~/Library/Application\ Support/Cursor/User/globalStorage/state.vscdb.bak-<ts> \
+   ~/Library/Application\ Support/Cursor/User/globalStorage/state.vscdb
 ```
 
 (With Cursor quit.)
