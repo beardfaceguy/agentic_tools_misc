@@ -9,6 +9,15 @@ own directory with a self-contained README.
 ```
 agentic_tools_misc/
 ├── README.md                       # this file
+├── behavior-template/              # unified global AI rules across IDEs
+│   ├── README.md
+│   ├── CUSTOMIZING.md
+│   ├── install.sh
+│   ├── global-behavior.md
+│   ├── sync-rules.sh
+│   └── systemd/
+│       ├── ai-rules-sync.path
+│       └── ai-rules-sync.service
 └── migrate-cursor-chat/            # re-bind Cursor chats to a moved workspace
     ├── README.md
     └── migrate-cursor-chat.py
@@ -18,6 +27,7 @@ agentic_tools_misc/
 
 | Directory | What it does |
 |-----------|--------------|
+| [`behavior-template/`](./behavior-template/) | Write AI agent behavioral rules once, auto-sync to Claude Code, Zed, and Cursor IDE. Uses a systemd file watcher to propagate edits from a single canonical file. |
 | [`migrate-cursor-chat/`](./migrate-cursor-chat/) | Re-associate Cursor chat history with a new workspace path after moving the workspace folder on disk. Rewrites the embedded `workspaceIdentifier` in `state.vscdb` and copies per-chat agent transcripts. |
 
 ## Conventions

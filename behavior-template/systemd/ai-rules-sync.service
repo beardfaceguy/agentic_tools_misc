@@ -1,0 +1,33 @@
+# Oneshot service triggered by ai-rules-sync.path whenever the canonical
+# AI rules file is modified. Runs sync-rules.sh to propagate changes to
+# each IDE's rules location.
+#
+# Current sync targets (defined in sync-rules.sh):
+#   Claude Code : ~/.claude/CLAUDE.md  (symlink — no work needed unless broken)
+#   Zed         : ~/.config/zed/settings.json  (rewrites assistant_instructions)
+#   Cursor IDE  : clipboard copy for manual paste into Settings > Rules
+#
+# If you add or remove an IDE:
+#   1. Edit ~/.config/ai-rules/sync-rules.sh to add/remove the target block.
+#   2. No changes needed to this unit or the .path unit.
+#
+# If sync-rules.sh fails (exit != 0) after a trigger:
+#   - Check the journal for the specific error:
+#       journalctl --user -u ai-rules-sync.service -n 30
+#   - Common causes:
+#       • Zed uninstalled → settings.json missing → script warns and continues
+#       • Claude Code uninstalled → ~/.claude/ missing → script creates dir
+#       • Python3 unavailable → Zed update skipped (needs json parsing)
+#       • Canonical file deleted → script exits 1 (fix: restore or update path)
+#
+# Manual run (test without editing the rules file):
+#   systemctl --user start ai-rules-sync.service
+#   journalctl --user -u ai-rules-sync.service -n 30
+
+[Unit]
+Description=Sync global AI rules to Claude Code, Zed, and Cursor
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/ai-rules/sync-rules.sh
+Environment=HOME=%h

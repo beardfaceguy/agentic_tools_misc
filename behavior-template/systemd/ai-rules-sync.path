@@ -1,0 +1,35 @@
+# Watches the canonical AI rules file for changes and triggers the sync
+# service. Fires on any write to global-behavior.md (save in an editor,
+# echo >>, etc.).
+#
+# Managed files:
+#   Canonical rules : ~/.config/ai-rules/global-behavior.md
+#   Sync script     : ~/.config/ai-rules/sync-rules.sh
+#   This unit       : ~/.config/systemd/user/ai-rules-sync.path
+#   Paired service  : ~/.config/systemd/user/ai-rules-sync.service
+#
+# Troubleshooting:
+#   - "ai-rules-sync.path: Failed" in journalctl
+#       → The watched file was deleted or moved. Recreate it or update
+#         PathModified below to the new location.
+#
+#   - Service never triggers after edits
+#       → Confirm the path unit is active:
+#           systemctl --user status ai-rules-sync.path
+#       → If inactive, re-enable:
+#           systemctl --user enable --now ai-rules-sync.path
+#
+#   - View recent trigger history:
+#       journalctl --user -u ai-rules-sync.service --since "1 hour ago"
+#
+# To disable (e.g. you removed an IDE and want to stop the watcher):
+#   systemctl --user disable --now ai-rules-sync.path
+
+[Unit]
+Description=Watch global AI rules for changes
+
+[Path]
+PathModified=%h/.config/ai-rules/global-behavior.md
+
+[Install]
+WantedBy=default.target
